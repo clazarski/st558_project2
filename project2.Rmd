@@ -8,3 +8,27 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+Libraries
+```{r message=FALSE, warning=FALSE}
+library("tidyverse")
+
+```
+Read in and subset the data
+```{r message=FALSE}
+news <- read_csv("OnlineNewsPopularity.csv")
+
+business <- news %>% filter(data_channel_is_bus == 1)
+lifestyle <- news %>% filter(data_channel_is_lifestyle == 1)
+entertainment <- news %>% filter(data_channel_is_entertainment == 1)
+socmed <- news %>% filter(data_channel_is_socmed == 1)
+tech <- news %>% filter(data_channel_is_tech == 1)
+world <- news %>% filter(data_channel_is_world == 1)
+
+# The sum of these rows does not equal the total number of rows in news.
+
+# Check if there are unclassified observations
+other <- news %>% filter((data_channel_is_lifestyle + data_channel_is_entertainment + data_channel_is_lifestyle + data_channel_is_bus + data_channel_is_socmed + data_channel_is_tech + data_channel_is_world) == 0)
+
+# This accounts for all of the data. Life is good.
+```
