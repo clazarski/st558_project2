@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Libraries
 ```{r message=FALSE, warning=FALSE}
 library("tidyverse")
+library(GGally)
 
 ```
 Read in and subset the data
@@ -31,4 +32,61 @@ world <- news %>% filter(data_channel_is_world == 1)
 other <- news %>% filter((data_channel_is_lifestyle + data_channel_is_entertainment + data_channel_is_lifestyle + data_channel_is_bus + data_channel_is_socmed + data_channel_is_tech + data_channel_is_world) == 0)
 
 # This accounts for all of the data. Life is good.
+```
+  
+  Now that we had an excellent partitioning of the data.  By going to the website and reading the descriptions of the variables, we became interested to see if there was a time influence on the number of shares.  If an article was published on a week day versus a weekend, would it get more shares?  We thought so, with an intution that people read more articles at work, and thus would be more likely to share articles that publish during the work week.  Let's see if we were on to something, shall we...  
+    
+    
+```{r message=FALSE, warning=FALSE}
+
+# I was trying to create a grouping of weekday and weekend so we could compare the number of shares within categories (i.e. business on weekdays, social on weekends, to see if there is something interesting, but can't get the code to work...)
+
+newsEDA <- news %>% mutate(weekday = (if_else(weekday_is_monday == 1 | weekday_is_tuesday == 1 | weekday_is_wednesday == 1 | weekday_is_thursday == 1 |  weekday_is_friday == 1)), 'yes', 'no')  
+
+newsWEEKEND <- news %>% select(weekday_is_saturday, weekday_is_sunday, shares)
+
+plot(newsWEEKEND)
+
+
+```    
+Things I think we should consider:
+
+A)  When was it published
+
+31. weekday_is_monday: Was the article published on a Monday?
+32. weekday_is_tuesday: Was the article published on a Tuesday?
+33. weekday_is_wednesday: Was the article published on a Wednesday?
+34. weekday_is_thursday: Was the article published on a Thursday?
+35. weekday_is_friday: Was the article published on a Friday?
+36. weekday_is_saturday: Was the article published on a Saturday?
+37. weekday_is_sunday: Was the article published on a Sunday?
+
+B) Multi media
+
+9. num_imgs: Number of images
+10. num_videos: Number of videos
+
+C) How long is the article
+
+11. average_token_length: Average length of the words in the content
+
+D) Type of channel (especially since you already partitioned that)
+
+13. data_channel_is_lifestyle: Is data channel 'Lifestyle'?
+14. data_channel_is_entertainment: Is data channel 'Entertainment'?
+15. data_channel_is_bus: Is data channel 'Business'?
+16. data_channel_is_socmed: Is data channel 'Social Media'?
+17. data_channel_is_tech: Is data channel 'Tech'?
+18. data_channel_is_world: Is data channel 'World'?
+
+E)  Is it a positive article, or negative?
+
+46. global_rate_positive_words: Rate of positive words in the content
+47. global_rate_negative_words: Rate of negative words in the content
+    
+```{r message=FALSE, warning=FALSE}
+
+plot(news)
+head(business)
+
 ```
