@@ -80,7 +80,50 @@ This graph displays the number of images and videos against the number of shares
 C) How long is the article
 
 
-11. average_token_length: Average length of the words in the content
+11. n_tokens_content: Average length of the words in the content
+With today's attention shortened attention span, are shorter articles more likely to be shared.
+
+```{r}
+# First, what is the distribution of article length?
+plot(business$n_tokens_content)
+summary(business$n_tokens_content)
+
+# Looks like the vast majority are 1000 words or less.  So we'll break them into quantiles: Blip, Short, Medium, Epic
+
+business <- business %>% mutate(wordiness = if_else(n_tokens_content > 727, 'Epic', if_else(n_tokens_content >539, 'Medium', if_else(n_tokens_content > 244, 'Short', 'Blip'))))
+
+g <- ggplot(data = business, aes(x = wordiness))
+
+g + geom_bar(aes(fill = shares)) +
+  labs(x="Wordiness", y= "Shares", title = "Wordiness vs shares")
+
+  
+```
+This graph splits the length of the article by quartiles.  It shows that articles of 'Short' length are the most shared, followed by a tie of the two polar categories - the longest 'Epic' & the shortest 'Blip'
+
+
+D) How long is the title?
+Is the title one word or a phrase?  Does length perhaps grab the readers attention to read it and then to pass it on...let's look and see.
+
+```{r}
+# First, what is the distribution of title length?
+plot(business$n_tokens_title)
+summary(business$n_tokens_title)
+
+# Good God!  A title 19 words long???  Isn't that a sentence and not a title???  Well, whatevers, grouping by quartiles:
+
+business <- business %>% mutate(title_words = if_else(n_tokens_title > 12, 'Ridiculous', if_else(n_tokens_title > 10, 'Still_too_long', if_else(n_tokens_title > 9, 'Shorter', '3_words'))))
+
+g1 <- ggplot(data = business, aes(x = title_words))
+
+g1 + geom_bar(aes(fill = shares)) +
+  labs(x="Title Length", y= "Shares", title = "Title Length vs shares")
+
+
+```
+  
+  
+A title of three words seems to be best...just realized that if we are going to automate this to a function to read other categories, we need to call the different groupings by Q1, Q2, etc and not the individual values...sounds like a job for the AMAZING CRAIG!!  :)
 
 
 
@@ -116,6 +159,25 @@ business %>% group_by(sentiment) %>% summarise(mean = mean(shares), sd= sd(share
 ```
 
 This table compares the average positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
+  
+  
+F) Is the title subjective?  Are shares lean towards opinion over objectiveness?  We would venture yes!
+
+```{r}
+plot(business$title_subjectivity)
+
+head(business$title_subjectivity)
+
+# Looks like the data is a ranking 0 to 1, and is continuous.  Scatterplot time! :)
+
+g2 <- ggplot(business, aes(x = title_subjectivity, y = shares))
+g2 + geom_point() 
+
+```
+   hmmmm...not seeing much here...maybe because it was business.  May make more of a difference in other categories...
+   
+   
+
 46. global_rate_positive_words: Rate of positive words in the content
 ```{r}
 plot(business$rate_positive_words, business$shares)
