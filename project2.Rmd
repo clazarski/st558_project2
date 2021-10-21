@@ -69,6 +69,11 @@ B) Multi media
 ```{R}
 # Make a new variable combining images and videos
 business <- business %>% mutate(multimedia = num_imgs + num_videos)
+business <- business %>% mutate(multimedia_category = 
+                                  if_else(multimedia >= 30, "high",
+                                  if_else(multimedia >= 20, "medium", 
+                                  if_else(multimedia >= 10, "low", "very low"))))
+business$multimedia_category <- factor(business$multimedia_category, levels = c("very low", "low", "medium", "high"))
 
 ggplot(data = business, aes(x= multimedia, y=shares)) +
   geom_point() +
@@ -76,6 +81,12 @@ ggplot(data = business, aes(x= multimedia, y=shares)) +
 ```
 This graph displays the number of images and videos against the number of shares. A positive trend would indicate that more images and videos are associatied with more shares. A negative trend would indicate that more images and videos are associated with fewer shares.
 
+```{r}
+ggplot(data=business, aes(x=multimedia_category, y=shares)) +
+  geom_col()
+
+```
+This graph displays the number of videos and images in a shared article. A high bar indicates the category that was most prevalent. 
 
 C) How long is the article
 
@@ -91,6 +102,8 @@ summary(business$n_tokens_content)
 # Looks like the vast majority are 1000 words or less.  So we'll break them into quantiles: Blip, Short, Medium, Epic
 
 business <- business %>% mutate(wordiness = if_else(n_tokens_content > 727, 'Epic', if_else(n_tokens_content >539, 'Medium', if_else(n_tokens_content > 244, 'Short', 'Blip'))))
+
+business$wordiness <- factor(business$wordiness, levels = c("Blip", "Short", "Medium", "Epic"))
 
 g <- ggplot(data = business, aes(x = wordiness))
 
@@ -114,6 +127,8 @@ summary(business$n_tokens_title)
 
 business <- business %>% mutate(title_words = if_else(n_tokens_title > 12, 'Ridiculous', if_else(n_tokens_title > 10, 'Still_too_long', if_else(n_tokens_title > 9, 'Shorter', '3_words'))))
 
+business$title_words <- factor(business$title_words, levels = c("3_words", "Shorter", "Still_too_long", "Ridiculous"))
+
 g1 <- ggplot(data = business, aes(x = title_words))
 
 g1 + geom_bar(aes(fill = shares)) +
@@ -136,21 +151,49 @@ ggplot(data=business, aes(x=av_avg_neg_polarity, y=avg_positive_polarity)) +
   stat_function(fun=function(x) x, size = 2, lty = 3 ,color = 'red')
 
 ```
-This graph shows the relationship between the positivey and negative polarity of an article. Values above the line y=x would indicate more positive and values below the line y=x indicate more negativity.
+This graph shows the relationship between the positive and negative polarity of an article. Values above the line y=x would indicate more positive and values below the line y=x indicate more negativity.
+
+
+The graphs below the distribution of shares according to their positive and negative polarity rating. The peak of the distribution indicates what rating has the most shares.
+```{r}
+business <- business %>% mutate(pos_polarity_rating =  
+                      if_else(avg_positive_polarity >= .9, "9",
+                      if_else(avg_positive_polarity >= .8, "8",
+                      if_else(avg_positive_polarity >= .7, "7",
+                      if_else(avg_positive_polarity >= .6, "6",
+                      if_else(avg_positive_polarity >= .5, "5",
+                      if_else(avg_positive_polarity >= .4, "4",
+                      if_else(avg_positive_polarity >= .3, "3",
+                      if_else(avg_positive_polarity >= .2, "2",
+                      if_else(avg_positive_polarity >= .1, "1", "0"))))))))))
+
+
+
+
+ggplot(data=business, aes(x=pos_polarity_rating, y=shares)) +
+  geom_col()
+
+```
+
 
 ```{r}
-ggplot(data=business, aes(x=avg_positive_polarity, y=shares)) +
-  geom_point() +
-  labs(x="Average Positive Polarity", y= "Shares", title = "Positive polarity vs shares")
-```
-The graph shows the average positive polarity rating vesus the number of shares. A positive trend indicates that a higher average positive polarity is associated with more shares. A negative trend indicates that a higher average positive polarity is associated with less shares.
+business <- business %>% mutate(neg_polarity_rating =  
+                      if_else(av_avg_neg_polarity >= .9, "9",
+                      if_else(av_avg_neg_polarity >= .8, "8",
+                      if_else(av_avg_neg_polarity >= .7, "7",
+                      if_else(av_avg_neg_polarity >= .6, "6",
+                      if_else(av_avg_neg_polarity >= .5, "5",
+                      if_else(av_avg_neg_polarity >= .4, "4",
+                      if_else(av_avg_neg_polarity >= .3, "3",
+                      if_else(av_avg_neg_polarity >= .2, "2",
+                      if_else(av_avg_neg_polarity >= .1, "1", "0"))))))))))
 
-```{r}
-ggplot(data=business, aes(x=av_avg_neg_polarity, y=shares)) +
-  geom_point() +
-  labs(x="Absolute Value Average Negative Polarity", y= "Shares", title = "Negative polarity vs shares")
+
+ggplot(data=business, aes(x=pos_polarity_rating, y=shares)) +
+  geom_col()
+
+
 ```
-The graph shows the absolute value average negative polarity rating vesus the number of shares. A positive trend indicates that a higher absolute value average negative polarity is associated with more shares. A negative trend indicates that a higher absolute value average positive polarity is associated with less shares.
 
 ```{r}
 business <- business %>% mutate( sentiment = if_else(avg_positive_polarity > av_avg_neg_polarity, "positive", "negative"))
@@ -158,7 +201,7 @@ business <- business %>% mutate( sentiment = if_else(avg_positive_polarity > av_
 business %>% group_by(sentiment) %>% summarise(mean = mean(shares), sd= sd(shares))
 ```
 
-This table compares the average positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
+This table compares the average number of shares based on positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
   
   
 F) Is the title subjective?  Are shares lean towards opinion over objectiveness?  We would venture yes!
@@ -176,7 +219,15 @@ g2 + geom_point()
 ```
    hmmmm...not seeing much here...maybe because it was business.  May make more of a difference in other categories...
    
-   
+```{r}
+business <- business %>% mutate(subjectivity = if_else(title_subjectivity <=.3, "No Subjectivity", if_else(title_subjectivity <= .7, "Somewhat Subjective", "Very Subjective")))
+
+
+ggplot(data=business, aes(x=subjectivity, y=shares)) +
+  geom_col()
+
+```
+This graph shows how subjective a title was. If a title had a subjectivity rating below 0.3 it was classified as Not subjective, between 0.3 and 0.7 as somewhat subjective, and over 0.7 very subjective. A high bar in the very subjective column would indicate that the title subjectivity was hard to classify and may contribute to a higher missclassification rate.
 
 46. global_rate_positive_words: Rate of positive words in the content
 ```{r}
@@ -188,9 +239,4 @@ plot(business$rate_positive_words, business$shares)
 plot(business$global_rate_negative_words, business$shares)
 
 ```
-```{r message=FALSE, warning=FALSE}
 
-plot(news)
-head(business)
-
-```
