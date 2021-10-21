@@ -102,8 +102,15 @@ ggplot(data = business, aes(x = wordiness, y=shares)) +
   geom_col() +
   labs(x="Wordiness", y= "Shares", title = "Wordiness vs shares")
 
+# Summary of wordiness
+
+business %>% group_by(wordiness) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
+
+
 ```
 The category with the highest bar indicates which grouping of lengths was most shared for this category of articles.
+
+The summary statistics show the total number of shares based on article length.  It also reports the average and the standard deviation.  If the standard deviation is high, then it says there's much more variation in the number of shares. 
 
 
 How long is the title?
@@ -114,10 +121,11 @@ Is the title one word or a phrase?  Does length perhaps grab the readers attenti
 plot(business$n_tokens_title)
 results <- summary(news$n_tokens_title)
 results
-# Good God!  A title 19 words long???  Isn't that a sentence and not a title???  Well, whatevers, grouping by quartiles:
+# Good God!  A title 23 words long???  Isn't that a sentence and not a title???  Well, whatevers, grouping by quartiles:
 
 business <- business %>% mutate(title_words = if_else(n_tokens_title > results[[5]] , 'Long', if_else(n_tokens_title > results[[3]], 'Typical', 'Short')))
 
+results[[5]]
 business$title_words <- factor(business$title_words, levels = c("Short", "Typical", "Long"))
 
 ggplot(data = business, aes(x = title_words, y = shares)) + 
@@ -127,7 +135,15 @@ ggplot(data = business, aes(x = title_words, y = shares)) +
 
 ```
 The category with the highest bar indicates the length that is most shared.  
-  
+
+Would a long article have a long title?  Is there a relationship between article length and title length?  If so, there might be an issue of correlation.
+
+```{r message=FALSE, warning=FALSE}
+
+table(business$wordiness, business$title_words)
+
+```
+
 Is it a positive article, or negative?
 
 This table compares the average number of shares based on positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
