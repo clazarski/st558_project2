@@ -56,6 +56,12 @@ This graph indicates which day has the most shares. A higher bar indicates more 
 
 ```{r}
 business %>% group_by(day) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
+
+# Creating 'workweek' variable for modeling (Mon - Thurs VS Fri - Sun):
+
+business <- business %>% mutate(workweek = 
+            if_else(weekday_is_monday == 1 | weekday_is_tuesday == 1 |
+                      weekday_is_wednesday == 1 |  weekday_is_thursday == 1, 'yes', 'no'))
 ```
 The summary statistics indicate the total number of shares per day along with the average and stanard deviation. Days with the highest mean indicate more shares. A large standard deviation indicates high variability in the number of shares on that day.
 
@@ -121,12 +127,16 @@ Is the title one word or a phrase?  Does length perhaps grab the readers attenti
 plot(business$n_tokens_title)
 results <- summary(news$n_tokens_title)
 results
-# Good God!  A title 23 words long???  Isn't that a sentence and not a title???  Well, whatevers, grouping by quartiles:
+# Good God!  A title 23 words long???  Isn't that a sentence and not a title??? 
+# Well, whatevers, grouping by quartiles:
 
-business <- business %>% mutate(title_words = if_else(n_tokens_title > results[[5]] , 'Long', if_else(n_tokens_title > results[[3]], 'Typical', 'Short')))
+business <- business %>% mutate(title_words = 
+            if_else(n_tokens_title > results[[5]] , 'Long', 
+                    if_else(n_tokens_title > results[[3]], 'Typical', 'Short')))
 
 results[[5]]
-business$title_words <- factor(business$title_words, levels = c("Short", "Typical", "Long"))
+business$title_words <- factor(business$title_words, 
+                               levels = c("Short", "Typical", "Long"))
 
 ggplot(data = business, aes(x = title_words, y = shares)) + 
   geom_col() +
@@ -195,8 +205,7 @@ g2 + geom_point()
 business <- business %>% mutate(subjectivity = if_else(title_subjectivity <=.3, "No Subjectivity", if_else(title_subjectivity <= .7, "Somewhat Subjective", "Very Subjective")))
 
 
-ggplot(data=business2, aes(x=subjectivity, y=shares)) +
-  geom_col()
+#### ISSUE  ggplot(data=business2, aes(x=subjectivity, y=shares)) +   geom_col()
 
 ```
 If a title had a subjectivity rating below 0.3 it was classified as Not subjective, between 0.3 and 0.7 as somewhat subjective, and over 0.7 very subjective. THe highest bar in any column would indicate that the most shared articles have a subjectivity of that bars rating.  A high bar in the very subjective column would indicate that the title subjectivity was hard to classify and may contribute to a higher missclassification rate.
@@ -207,18 +216,58 @@ If a title had a subjectivity rating below 0.3 it was classified as Not subjecti
 A linear model is about fitting your mom ...
 After I pee my rsqured is much lower. 
 
+Splitting data into a training and test set (70/30):
+```{r message=FALSE, warning=FALSE}
+
+# seed was already set...
+
+# indices to split on
+library(caret)
+# want 70% to train on
+trainIndex <- createDataPartition(business$shares, p = .7, list = FALSE)
+
+
+# subsets of data
+busTrain <- business[trainIndex, ]
+busTest <- business[-trainIndex, ]
+
+
+```
 Linear Models
 ```{R}
-# Linear model involving only emotional variables
 
-Model1 <- lm(shares ~  avg_positive_polarity + avg_negative_polarity + global_sentiment_polarity  + rate_positive_words + rate_negative_words + title_sentiment_polarity, data = business)
+# Linear model involving only multimedia
 
-# Linear model involving physical attributes of article
-Model2 <- lm( shares ~ num_imgs + num_videos + num_keywords + n_tokens_title + n_tokens_content, data = business)
+LM1 <- train(shares ~ num_imgs + num_videos, data = busTrain,
+             method = "lm", 
+             preProcess = c('center', 'scale'),
+             trControl = trainControl(method = 'cv', number = 10))
+LM1
 
-Model3 <- lm( shares ~ num_imgs + num_videos , data = business )
+pred1 <- predict(LM1, newdata = busTest)
+postResample(pred1, obs = busTest$shares)
 
 
-summary(Model1)
-summary(Model3)
+# Linear model based on when it was released Mon - Thur vs Fri - Sun
+
+LM2 <- train(shares ~ workweek, data = busTrain,
+             method = "lm", 
+             preProcess = c('center', 'scale'),
+             trControl = trainControl(method = 'cv', number = 10))
+LM2
+
+pred2 <- predict(LM2, newdata = busTest)
+postResample(pred2, obs = busTest$shares)
+
+# Linear model based on length
+
+LM3 <- train(shares ~ I(n_tokens_content)^2 + n_tokens_title, data = busTrain,
+             method = "lm", 
+             preProcess = c('center', 'scale'),
+             trControl = trainControl(method = 'cv', number = 10))
+LM3
+
+pred3 <- predict(LM3, newdata = busTest)
+postResample(pred3, obs = busTest$shares)
+
 ```
