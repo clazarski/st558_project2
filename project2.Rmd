@@ -12,7 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 Libraries
 ```{r message=FALSE, warning=FALSE}
 library("tidyverse")
-library(GGally)
+library("GGally")
+library("caret")
 set.seed(1234)
 ```
 Read in and subset the data
@@ -228,7 +229,7 @@ Splitting data into a training and test set (70/30):
 # seed was already set...
 
 # indices to split on
-library(caret)
+library("caret")
 # want 70% to train on
 trainIndex <- createDataPartition(channel$shares, p = .7, list = FALSE)
 
@@ -285,11 +286,16 @@ postResample(pred3, obs = channelTest$shares)
 
 Random forest model
 ```{r}
-random_forest <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain, 
+random_forest <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain,
           method = "rf", 
-          preProcess = c("center", "scale"),
-          tuneGrid = data.frame(mtry = 1:5))
+          trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3),
+          preProcess = c("center", "scale"))
 
 confusionMatrix(random_forest, newdata = channelTest)
+
+```
+
+```{r}
+# Comparing models
 
 ```
