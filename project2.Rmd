@@ -36,10 +36,16 @@ other <- news %>% filter((data_channel_is_lifestyle + data_channel_is_entertainm
   
   Now that we had an excellent partitioning of the data.  By going to the website and reading the descriptions of the variables, we became interested to see if there was a time influence on the number of shares.  If an article was published on a week day versus a weekend, would it get more shares?  We thought so, with an intuition that people read more articles at work, and thus would be more likely to share articles that publish during the work week.  Let's see if we were on to something, shall we...  
     
+
+Set the channel
+```{r}
+channel <- business
+```
+
     
 ```{r message=FALSE, warning=FALSE}
 
-business <- business %>% mutate(day = 
+channel <- channel %>% mutate(day = 
             if_else(weekday_is_monday == 1, 'Monday', 
             if_else( weekday_is_tuesday == 1, 'Tuesday',
             if_else(weekday_is_wednesday == 1 , 'Wednesday', 
@@ -47,19 +53,19 @@ business <- business %>% mutate(day =
             if_else(weekday_is_friday == 1, 'Friday',
             if_else(weekday_is_saturday == 1, 'Saturday', 'Sunday')))))))
 
-business$day <- factor(business$day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
-ggplot(data=business, aes(x=day, y=shares)) +
+channel$day <- factor(channel$day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+ggplot(data=channel, aes(x=day, y=shares)) +
   geom_col()
 
 ```    
 This graph indicates which day has the most shares. A higher bar indicates more shares on that day.
 
 ```{r}
-business %>% group_by(day) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
+channel %>% group_by(day) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
 
 # Creating 'workweek' variable for modeling (Mon - Thurs VS Fri - Sun):
 
-business <- business %>% mutate(workweek = 
+channel <- channel %>% mutate(workweek = 
             if_else(weekday_is_monday == 1 | weekday_is_tuesday == 1 |
                       weekday_is_wednesday == 1 |  weekday_is_thursday == 1, 'yes', 'no'))
 ```
@@ -69,21 +75,21 @@ Multi media
 
 ```{R}
 # Make a new variable combining images and videos
-business <- business %>% mutate(multimedia = num_imgs + num_videos)
-business <- business %>% mutate(multimedia_category = 
+channel <- channel %>% mutate(multimedia = num_imgs + num_videos)
+channel <- channel %>% mutate(multimedia_category = 
                                   if_else(multimedia >= 30, "high",
                                   if_else(multimedia >= 20, "medium", 
                                   if_else(multimedia >= 10, "low", "very low"))))
-business$multimedia_category <- factor(business$multimedia_category, levels = c("very low", "low", "medium", "high"))
+channel$multimedia_category <- factor(channel$multimedia_category, levels = c("very low", "low", "medium", "high"))
 
-ggplot(data = business, aes(x= multimedia, y=shares)) +
+ggplot(data = channel, aes(x= multimedia, y=shares)) +
   geom_point() +
   labs(x="Number of images and videos", y= "Shares", title = "Multimedia vs shares")
 ```
 This graph displays the number of images and videos against the number of shares. A positive trend would indicate that more images and videos are associatied with more shares. A negative trend would indicate that more images and videos are associated with fewer shares.
 
 ```{r}
-ggplot(data=business, aes(x=multimedia_category, y=shares)) +
+ggplot(data=channel, aes(x=multimedia_category, y=shares)) +
   geom_col()
 
 ```
@@ -95,22 +101,22 @@ With today's shortened attention span, are shorter articles more likely to be sh
 
 ```{r}
 # First, what is the distribution of article length?
-plot(business$n_tokens_content)
+plot(channel$n_tokens_content)
 results <- summary(news$n_tokens_content)
 
 # Looks like the vast majority are 1000 words or less.  So we'll break them into quantiles: Blip, Short, Medium, Epic
 
-business <- business %>% mutate(wordiness = if_else(n_tokens_content > results[[5]], 'Epic', if_else(n_tokens_content >results[[3]], 'Medium', if_else(n_tokens_content > results[[2]], 'Short', 'Blip'))))
+channel <- channel %>% mutate(wordiness = if_else(n_tokens_content > results[[5]], 'Epic', if_else(n_tokens_content >results[[3]], 'Medium', if_else(n_tokens_content > results[[2]], 'Short', 'Blip'))))
 
-business$wordiness <- factor(business$wordiness, levels = c("Blip", "Short", "Medium", "Epic"))
+channel$wordiness <- factor(channel$wordiness, levels = c("Blip", "Short", "Medium", "Epic"))
 
-ggplot(data = business, aes(x = wordiness, y=shares)) +
+ggplot(data = channel, aes(x = wordiness, y=shares)) +
   geom_col() +
   labs(x="Wordiness", y= "Shares", title = "Wordiness vs shares")
 
 # Summary of wordiness
 
-business %>% group_by(wordiness) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
+channel %>% group_by(wordiness) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
 
 
 ```
@@ -124,21 +130,21 @@ Is the title one word or a phrase?  Does length perhaps grab the readers attenti
 
 ```{r}
 # First, what is the distribution of title length?
-plot(business$n_tokens_title)
+plot(channel$n_tokens_title)
 results <- summary(news$n_tokens_title)
 results
 # Good God!  A title 23 words long???  Isn't that a sentence and not a title??? 
 # Well, whatevers, grouping by quartiles:
 
-business <- business %>% mutate(title_words = 
+channel <- channel %>% mutate(title_words = 
             if_else(n_tokens_title > results[[5]] , 'Long', 
                     if_else(n_tokens_title > results[[3]], 'Typical', 'Short')))
 
 results[[5]]
-business$title_words <- factor(business$title_words, 
+channel$title_words <- factor(channel$title_words, 
                                levels = c("Short", "Typical", "Long"))
 
-ggplot(data = business, aes(x = title_words, y = shares)) + 
+ggplot(data = channel, aes(x = title_words, y = shares)) + 
   geom_col() +
   labs(x="Title Length", y= "Shares", title = "Title Length vs shares")
 
@@ -150,7 +156,7 @@ Would a long article have a long title?  Is there a relationship between article
 
 ```{r message=FALSE, warning=FALSE}
 
-table(business$wordiness, business$title_words)
+table(channel$wordiness, channel$title_words)
 
 ```
 
@@ -159,8 +165,8 @@ Is it a positive article, or negative?
 This table compares the average number of shares based on positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
 
 ```{r}
-business <- business %>% mutate(av_avg_neg_polarity = -1*avg_negative_polarity)
-ggplot(data=business, aes(x=av_avg_neg_polarity, y=avg_positive_polarity)) +
+channel <- channel %>% mutate(av_avg_neg_polarity = -1*avg_negative_polarity)
+ggplot(data=channel, aes(x=av_avg_neg_polarity, y=avg_positive_polarity)) +
   geom_point() +
   stat_function(fun=function(x) x, size = 2, lty = 3 ,color = 'red')
 
@@ -173,14 +179,14 @@ The graphs below the distribution of shares according to their positive and nega
 
 
 ```{r}
-business <- business %>% mutate( sentiment = if_else(avg_positive_polarity > av_avg_neg_polarity, "positive", "negative"))
+channel <- channel %>% mutate( sentiment = if_else(avg_positive_polarity > av_avg_neg_polarity, "positive", "negative"))
 
-business %>% group_by(sentiment) %>% summarise(mean = mean(shares), sd= sd(shares), sum = sum(shares), ratio = sum(shares))
+channel %>% group_by(sentiment) %>% summarise(mean = mean(shares), sd= sd(shares), sum = sum(shares), ratio = sum(shares))
 summary(news$shares)
 
-business2 <- business %>% subset(shares >= 2800) 
+channel2 <- channel %>% subset(shares >= 2800) 
 
-ggplot(data = business2, aes(x=sentiment, y=shares)) +
+ggplot(data = channel2, aes(x=sentiment, y=shares)) +
   geom_col()
 ```
 This graph took the 25% of articles with the most shares and display the shares based on their positivity or negativity. The higher bar will indicate what the most shared articles can be categorized as that sentiment.
@@ -189,20 +195,20 @@ This graph took the 25% of articles with the most shares and display the shares 
 Is the title subjective?  Do shares lean towards opinion over objectiveness?  We would venture yes!
 
 ```{r}
-plot(business$title_subjectivity)
+plot(channel$title_subjectivity)
 
-head(business$title_subjectivity)
+head(channel$title_subjectivity)
 
 # Looks like the data is a ranking 0 to 1, and is continuous.  Scatterplot time! :)
 
-g2 <- ggplot(business, aes(x = title_subjectivity, y = shares))
+g2 <- ggplot(channel, aes(x = title_subjectivity, y = shares))
 g2 + geom_point() 
 
 ```
-   hmmmm...not seeing much here...maybe because it was business.  May make more of a difference in other categories...
+
    
 ```{r}
-business <- business %>% mutate(subjectivity = if_else(title_subjectivity <=.3, "No Subjectivity", if_else(title_subjectivity <= .7, "Somewhat Subjective", "Very Subjective")))
+channel <- channel %>% mutate(subjectivity = if_else(title_subjectivity <=.3, "No Subjectivity", if_else(title_subjectivity <= .7, "Somewhat Subjective", "Very Subjective")))
 
 
 #### ISSUE  ggplot(data=business2, aes(x=subjectivity, y=shares)) +   geom_col()
@@ -224,50 +230,66 @@ Splitting data into a training and test set (70/30):
 # indices to split on
 library(caret)
 # want 70% to train on
-trainIndex <- createDataPartition(business$shares, p = .7, list = FALSE)
+trainIndex <- createDataPartition(channel$shares, p = .7, list = FALSE)
 
 
 # subsets of data
-busTrain <- business[trainIndex, ]
-busTest <- business[-trainIndex, ]
+channelTrain <- channel[trainIndex, ]
+channelTest <- channel[-trainIndex, ]
 
 
 ```
 Linear Models
+
+A linear model seeks to minimize the sum of the squared distances between the observed values and the predicted values. In this scenario the number of shares are the observed values. The predicted number of shares will be determined by the variables that are used in each model. Predicted values are found by inputting a value for each model variable and then applying the model coefficients to those inputs and summing the results. The coefficients associated with each model variable are the ones that minimized the squared distance between that prediction and the observed value. Adding more variables increases the complexity of the model but may also increase the predictive ability. Using terms that are transformations of the original variables (such as squaring) can add more flexibility to the model allowing for increased prediction ability. We can evaluate a model by examining measures such as the mean squared error which averages the distances between the predictions and observed values (we want this number to be small), the R-squared value which tells us how much of the variation is explained by the model variables (we want this number to be near 1), or residual plots which illuminate potentiall outlier values or influential points.
+
 ```{R}
+
 
 # Linear model involving only multimedia
 
-LM1 <- train(shares ~ num_imgs + num_videos, data = busTrain,
+LM1 <- train(shares ~ num_imgs + num_videos, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM1
 
-pred1 <- predict(LM1, newdata = busTest)
-postResample(pred1, obs = busTest$shares)
+pred1 <- predict(LM1, newdata = channelTest)
+postResample(pred1, obs = channelTest$shares)
 
 
 # Linear model based on when it was released Mon - Thur vs Fri - Sun
 
-LM2 <- train(shares ~ workweek, data = busTrain,
+LM2 <- train(shares ~ workweek, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM2
 
-pred2 <- predict(LM2, newdata = busTest)
-postResample(pred2, obs = busTest$shares)
+pred2 <- predict(LM2, newdata = channelTest)
+postResample(pred2, obs = channelTest$shares)
 
 # Linear model based on length
 
-LM3 <- train(shares ~ I(n_tokens_content)^2 + n_tokens_title, data = busTrain,
+LM3 <- train(shares ~ I(n_tokens_content)^2 + n_tokens_title, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM3
 
-pred3 <- predict(LM3, newdata = busTest)
-postResample(pred3, obs = busTest$shares)
+pred3 <- predict(LM3, newdata = channelTest)
+postResample(pred3, obs = channelTest$shares)
+
+```
+
+
+Random forest model
+```{r}
+random_forest <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain, 
+          method = "rf", 
+          preProcess = c("center", "scale"),
+          tuneGrid = data.frame(mtry = 1:5))
+
+confusionMatrix(random_forest, newdata = channelTest)
 
 ```
