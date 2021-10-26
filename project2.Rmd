@@ -229,7 +229,6 @@ Splitting data into a training and test set (70/30):
 # seed was already set...
 
 # indices to split on
-library("caret")
 # want 70% to train on
 trainIndex <- createDataPartition(channel$shares, p = .7, list = FALSE)
 
@@ -245,6 +244,16 @@ Linear Models
 A linear model seeks to minimize the sum of the squared distances between the observed values and the predicted values. In this scenario the number of shares are the observed values. The predicted number of shares will be determined by the variables that are used in each model. Predicted values are found by inputting a value for each model variable and then applying the model coefficients to those inputs and summing the results. The coefficients associated with each model variable are the ones that minimized the squared distance between that prediction and the observed value. Adding more variables increases the complexity of the model but may also increase the predictive ability. Using terms that are transformations of the original variables (such as squaring) can add more flexibility to the model allowing for increased prediction ability. We can evaluate a model by examining measures such as the mean squared error which averages the distances between the predictions and observed values (we want this number to be small), the R-squared value which tells us how much of the variation is explained by the model variables (we want this number to be near 1), or residual plots which illuminate potentiall outlier values or influential points.
 
 ```{R}
+# Linear model using all of the variables in our EDA
+
+LM0 <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend, data = channelTrain,
+             method = "lm", 
+             preProcess = c('center', 'scale'),
+             trControl = trainControl(method = 'cv', number = 10))
+LM0
+
+pred1 <- predict(LM0, newdata = channelTest)
+postResample(pred1, obs = channelTest$shares)
 
 
 # Linear model involving only multimedia
@@ -288,8 +297,9 @@ Random forest model
 ```{r}
 random_forest <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain,
           method = "rf", 
-          trControl = trainControl(method = "repeatedcv", number = 10, repeats = 3),
-          preProcess = c("center", "scale"))
+          trControl = trainControl(method = "cv", number = 10),
+          preProcess = c("center", "scale"),
+          tuneGrid = data.frame(mtry = 1:6))
 
 confusionMatrix(random_forest, newdata = channelTest)
 
