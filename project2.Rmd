@@ -1,6 +1,6 @@
 ---
 title: "Project 2"
-author: "Craig Lazarski"
+author: "C-dog & Kray-Kray"
 date: "October 15, 2021"
 output: html_document
 params:
@@ -150,7 +150,7 @@ plot(channel$n_tokens_title)
 results <- summary(news$n_tokens_title)
 results
 # Good God!  A title 23 words long???  Isn't that a sentence and not a title??? 
-# Well, whatevers, grouping by quartiles:
+# Well, let's grouping by quartiles:
 
 channel <- channel %>% mutate(title_words = 
             if_else(n_tokens_title > results[[5]] , 'Long', 
@@ -261,49 +261,52 @@ A linear model seeks to minimize the sum of the squared distances between the ob
 ```{R}
 # Linear model using all of the variables in our EDA
 
-LM0 <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend, data = channelTrain,
+# During our EDA, we noticed a handful of shares that were off the charts.  To bring down the range of our model's response, we are going to 'log' the shares variable.
+log_shares <- log(channelTest$shares)
+
+LM0 <- train(log(shares) ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM0
 
-pred1 <- predict(LM0, newdata = channelTest)
-postResample(pred1, obs = channelTest$shares)
+pred0 <- predict(LM0, newdata = channelTest)
+r0 <- postResample(pred0, obs =log_shares)
 
 
 # Linear model involving only multimedia
 
-LM1 <- train(shares ~ num_imgs + num_videos, data = channelTrain,
+LM1 <- train(log(shares) ~ num_imgs + num_videos, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM1
 
 pred1 <- predict(LM1, newdata = channelTest)
-r1 <- postResample(pred1, obs = channelTest$shares)
+r1 <- postResample(pred1, obs = log_shares)
 
 
 # Linear model based on when it was released Mon - Thur vs Fri - Sun
 
-LM2 <- train(shares ~ workweek, data = channelTrain,
+LM2 <- train(log(shares) ~ workweek, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM2
 
 pred2 <- predict(LM2, newdata = channelTest)
-r2 <- postResample(pred2, obs = channelTest$shares)
+r2 <- postResample(pred2, obs = log_shares)
 
 # Linear model based on length
 
-LM3 <- train(shares ~ I(n_tokens_content)^2 + n_tokens_title, data = channelTrain,
+LM3 <- train(log(shares) ~ I(n_tokens_content)^2 + n_tokens_title, data = channelTrain,
              method = "lm", 
              preProcess = c('center', 'scale'),
              trControl = trainControl(method = 'cv', number = 10))
 LM3
 
 pred3 <- predict(LM3, newdata = channelTest)
-r3 <- postResample(pred3, obs = channelTest$shares)
+r3 <- postResample(pred3, obs = log_shares)
 
 
 
@@ -320,9 +323,9 @@ registerDoParallel(cl)
 
 random_forest <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain,
           method = "rf", 
-          trControl = trainControl(method = "cv", number = 10),
+          trControl = trainControl(method = "cv", number = 5),
           preProcess = c("center", "scale"),
-          tuneGrid = data.frame(mtry = 1:6))
+          tuneGrid = data.frame(mtry = 1:5))
 
 stopCluster(cl)
 random_forest
@@ -336,13 +339,31 @@ unregister_dopar <- function() {
 }
 unregister_dopar()
 
+```{r message=FALSE, warning=FALSE}
 
+# Boosted Tree Model:
+library(gbm)
+
+# We wanted to continue doing the log of our response, however, since we were using the 'Poisson' distribution, our values had to be positive.  In order to achieve that, we translated our response to the left 1.
+boostFit <- gbm(log(shares) ~ n_tokens_title + n_tokens_content + 
+                      num_imgs +num_videos + global_sentiment_polarity + 
+                      is_weekend , data = channelTrain,
+          distribution = "gaussian", 
+          n.trees = 5000,
+          shrinkage = .1, interaction.depth = 4)
+
+boostPred <- predict(boostFit, newdata = channelTest)
+boostedRMSE <- sqrt(mean((boostFit$fit - log_shares)^2))
+boostedRMSE
+
+
+```
 
 Compare Models
 ```{r}
 
-model_types <- c("linear model 0", "linear model 1", "Linear model 3")
-model_rmse <- c(r1[[1]],r2[[1]],r3[[1]])
+model_types <- c("LM1: Multimedia", "LM2: Release day", "LM3: Length", "Boost Tree")
+model_rmse <- c(r1[[1]],r2[[1]],r3[[1]], boostedRMSE[[1]])
 compare_models <- data.frame(model_types, model_rmse)
 
 compare_models <- compare_models %>% arrange((model_rmse))
