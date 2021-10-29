@@ -1,3 +1,20 @@
 ## Purpose of Repo
 
-This repo contains documents that show our analysis of the shares data from <link>https://archive.ics.uci.edu/ml/datasets/Online+News+Popularity<\link>. There are 6 categories of articles that we explored. Each category uses the same exploratory data analysis to illustrate trends and patterns 
+We explored the UCI machine learning database file on shares of news stories to try and predict the number of shares based on a variety of predictor variables. Our repo contains an R Markdown file that automates an exploratory data analysis for each of 6 categories of news cycles. Each web page contains the same analysis format but in context of that specific category. A final model for making predictions is chosen at the end of each analysis page based on the root MSE of the models that were created.
+
+# Libraries used
+
+library("tidyverse")
+library("GGally")
+library("caret")
+
+
+# Analyses
+The analysis for [Business ariticles is available here](lifestyles.html)
+The analysis for [Lifestyle ariticles is available here](lifestyles.html)
+The analysis for [Entertainment ariticles is available here](lifestyles.html)
+The analysis for [Society and Medicine ariticles is available here](lifestyles.html)
+The analysis for [Technology ariticles is available here](lifestyles.html)
+The analysis for [Other ariticles is available here](lifestyles.html)
+
+# Code to run analyses
