@@ -1,23 +1,36 @@
 ---
-title: "Project 2"
+title: "Shares analysis"
 author: "C-dog & Kray-Kray"
-date: "October 15, 2021"
-output: html_document
+date: "October 30, 2021"
 params:
   data: 1
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+
 
 Libraries
 ```{r message=FALSE, warning=FALSE}
 library("tidyverse")
 library("GGally")
 library("caret")
+library("gbm")
 set.seed(1234)
 ```
+```{r}
+page_name <- if_else(params$data == 1, "business", 
+if_else(params$data == 2, "lifestyle",
+if_else(params$data == 3, "entertainment",
+if_else(params$data == 4, "social media",
+if_else(params$data == 5, "technology", "world")))))
+```
+
+Analysis of `r page_name` shares.
+
 Read in and subset the data
 ```{r message=FALSE}
 news <- read_csv("OnlineNewsPopularity.csv")
@@ -49,16 +62,14 @@ other <- news %>% filter((data_channel_is_lifestyle + data_channel_is_entertainm
   
   Now that we had an excellent partitioning of the data.  By going to the website and reading the descriptions of the variables, we became interested to see if there was a time influence on the number of shares.  If an article was published on a week day versus a weekend, would it get more shares?  We thought so, with an intuition that people read more articles at work, and thus would be more likely to share articles that publish during the work week.  Let's see if we were on to something, shall we...  
    
-Set the Channel
+Set the Channel according to the parameter
 ```{r}
-
 channel <-  news2 %>% filter(type == params$data)
-channel
-
-
 ```
 
-    
+# Day of the week
+
+We created a variable that indicated the day of the week an article was shared so we could summarize the number of shares by day.    
 ```{r message=FALSE, warning=FALSE}
 
 channel <- channel %>% mutate(day = 
@@ -70,24 +81,27 @@ channel <- channel %>% mutate(day =
             if_else(weekday_is_saturday == 1, 'Saturday', 'Sunday')))))))
 
 channel$day <- factor(channel$day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
-ggplot(data=channel, aes(x=day, y=shares)) +
-  geom_col()
-
-```    
-This graph indicates which day has the most shares. A higher bar indicates more shares on that day.
-
-```{r}
-channel %>% group_by(day) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
 
 # Creating 'workweek' variable for modeling (Mon - Thurs VS Fri - Sun):
 
 channel <- channel %>% mutate(workweek = 
             if_else(weekday_is_monday == 1 | weekday_is_tuesday == 1 |
                       weekday_is_wednesday == 1 |  weekday_is_thursday == 1, 'yes', 'no'))
+
+ggplot(data=channel, aes(x=day, y=shares)) +
+  geom_col()
+
+
+```    
+This graph indicates which day has the most shares. A higher bar indicates more shares on that day.
+
+```{r}
+channel %>% group_by(day) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
 ```
+
 The summary statistics indicate the total number of shares per day along with the average and stanard deviation. Days with the highest mean indicate more shares. A large standard deviation indicates high variability in the number of shares on that day.
 
-Multi media
+#Multi media
 
 ```{R}
 # Make a new variable combining images and videos
@@ -111,7 +125,7 @@ ggplot(data=channel, aes(x=multimedia_category, y=shares)) +
 ```
 This graph displays the number of videos and images in a shared article. A high bar indicates the category that was most prevalent. 
 
-How long is the article
+#Length of article
 
 With today's shortened attention span, are shorter articles more likely to be shared?
 
@@ -129,15 +143,16 @@ channel$wordiness <- factor(channel$wordiness, levels = c("Blip", "Short", "Medi
 ggplot(data = channel, aes(x = wordiness, y=shares)) +
   geom_col() +
   labs(x="Wordiness", y= "Shares", title = "Wordiness vs shares")
+```
+The category with the highest bar indicates which grouping of lengths was most shared for this category of articles.
 
+```{r}
 # Summary of wordiness
 
 channel %>% group_by(wordiness) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
 
 
 ```
-The category with the highest bar indicates which grouping of lengths was most shared for this category of articles.
-
 The summary statistics show the total number of shares based on article length.  It also reports the average and the standard deviation.  If the standard deviation is high, then it says there's much more variation in the number of shares. 
 
 
@@ -178,7 +193,7 @@ table(channel$wordiness, channel$title_words)
 
 Is it a positive article, or negative?
 
-This table compares the average number of shares based on positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
+This code below compares the average number of shares based on positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
 
 ```{r}
 channel <- channel %>% mutate(av_avg_neg_polarity = -1*avg_negative_polarity)
@@ -235,8 +250,13 @@ If a title had a subjectivity rating below 0.3 it was classified as Not subjecti
 
 
 
-A linear model is about fitting your mom ...
-After I pee my rsqured is much lower. 
+
+"After I pee my rsqured is much lower." (Kristi Ramey 10/22/2021 4:37 PM)
+
+Just checking if you're actually reading this :)
+
+Moving on
+
 
 Splitting data into a training and test set (70/30):
 ```{r message=FALSE, warning=FALSE}
@@ -321,7 +341,7 @@ cl<-makePSOCKcluster(12)
   
 registerDoParallel(cl)
 
-random_forest <- train(shares ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain,
+random_forest <- train(log(shares) ~ n_tokens_title + n_tokens_content + num_imgs +num_videos + global_sentiment_polarity +is_weekend , data = channelTrain,
           method = "rf", 
           trControl = trainControl(method = "cv", number = 5),
           preProcess = c("center", "scale"),
@@ -331,7 +351,7 @@ stopCluster(cl)
 random_forest
 
 predrf <- predict(random_forest, newdata = channelTest)
-r4 <- postResample(predrf, obs = channelTest$shares)
+r4 <- postResample(predrf, obs = log_shares)
 
 unregister_dopar <- function() {
   env <- foreach:::.foreachGlobals
@@ -342,7 +362,7 @@ unregister_dopar()
 ```{r message=FALSE, warning=FALSE}
 
 # Boosted Tree Model:
-library(gbm)
+
 
 # We wanted to continue doing the log of our response, however, since we were using the 'Poisson' distribution, our values had to be positive.  In order to achieve that, we translated our response to the left 1.
 boostFit <- gbm(log(shares) ~ n_tokens_title + n_tokens_content + 
@@ -362,12 +382,12 @@ boostedRMSE
 Compare Models
 ```{r}
 
-model_types <- c("LM1: Multimedia", "LM2: Release day", "LM3: Length", "Boost Tree")
-model_rmse <- c(r1[[1]],r2[[1]],r3[[1]], boostedRMSE[[1]])
+model_types <- c("LM0: All variables from EDA", "LM1: Multimedia", "LM2: Release day", "LM3: Length", "Random Forest","Boost Tree")
+model_rmse <- c(r0[[1]],r1[[1]],r2[[1]],r3[[1]],r4[[1]], boostedRMSE[[1]])
 compare_models <- data.frame(model_types, model_rmse)
 
 compare_models <- compare_models %>% arrange((model_rmse))
 best_model <- compare_models[1,]
-best_model
-```
 
+```
+The best model for `r page_name` shares is `r best_model` since it has the lowest rmse.
