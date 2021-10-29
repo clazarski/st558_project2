@@ -19,13 +19,12 @@ The analysis for Technology ariticles is available [here](5.html)
 The analysis for World ariticles is available [here](6.html)  
 
 ## Code to run analyses
-<<<<<<< HEAD
+
 The channels are coded to numbers
 
-=======
+
 # The channels are coded to numbers
->>>>>>> e316f51157906e2fb31785f89d4252f41492da52
-channel <- c(1,2,3,4,5,6)
+
 
 for (channel in channel) {
   rmarkdown::render(
