@@ -11,16 +11,16 @@ library("caret")
 
 
 ## Analyses
-The analysis for Business ariticles is available [here](lifestyles.html)  
-The analysis for Lifestyle ariticles is available [here](lifestyles.html)  
-The analysis for Entertainment ariticles is available [here](lifestyles.html)  
-The analysis for Society and Medicine ariticles is available [here](lifestyles.html)  
-The analysis for Technology ariticles is available [here](lifestyles.html)  
-The analysis for Other ariticles is available [here](lifestyles.html)  
+The analysis for Business ariticles is available [here](1.html)  
+The analysis for Lifestyle ariticles is available [here](2.html)  
+The analysis for Entertainment ariticles is available [here](3.html)  
+The analysis for Society and Medicine ariticles is available [here](4.html)  
+The analysis for Technology ariticles is available [here](5.html)  
+The analysis for World ariticles is available [here](6.html)  
 
 ## Code to run analyses
 # The channels are coded to numbers
-channel <- c(1,2,3,4,5)
+channel <- c(1,2,3,4,5,6)
 
 for (channel in channel) {
   rmarkdown::render(
