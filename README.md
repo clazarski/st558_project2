@@ -11,11 +11,11 @@ library("caret")
 
 
 ## Analyses
-The analysis for [Business ariticles is available here](lifestyles.html)
-The analysis for [Lifestyle ariticles is available here](lifestyles.html)
-The analysis for [Entertainment ariticles is available here](lifestyles.html)
-The analysis for [Society and Medicine ariticles is available here](lifestyles.html)
-The analysis for [Technology ariticles is available here](lifestyles.html)
-The analysis for [Other ariticles is available here](lifestyles.html)
+The analysis for Business ariticles is available [here](lifestyles.html)  
+The analysis for Lifestyle ariticles is available [here](lifestyles.html)  
+The analysis for Entertainment ariticles is available [here](lifestyles.html)  
+The analysis for Society and Medicine ariticles is available [here](lifestyles.html)  
+The analysis for Technology ariticles is available [here](lifestyles.html)  
+The analysis for Other ariticles is available [here](lifestyles.html)  
 
 ## Code to run analyses
