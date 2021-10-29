@@ -23,8 +23,7 @@ The analysis for World ariticles is available [here](6.html)
 The channels are coded to numbers
 
 
-# The channels are coded to numbers
-
+channel <- c(0,1,2,3,4,5,6)
 
 for (channel in channel) {
   rmarkdown::render(
