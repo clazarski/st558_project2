@@ -253,7 +253,7 @@ If a title had a subjectivity rating below 0.3 it was classified as Not subjecti
 
 "After I pee my rsqured is much lower." (Kristi Ramey 10/22/2021 4:37 PM)
 
-Just checking if you're actually reading this :)
+Just checking if you're actually reading this :) (‘we completely understand if you’re just skimming – we would.
 
 Moving on
 
@@ -332,11 +332,14 @@ r3 <- postResample(pred3, obs = log_shares)
 
 ```
 
+#Random Forest Model
+Random forest modelling uses the idea of bootstrapping. This method will take bootstrap samples form the data, train the tree using that sample, repeat a set number of times and return a final prediction that is the mean of the predictions found in this process. Random forest is different from bagging in that it uses a random subset of the predictors for each bootstrap. This is potentially more useful as if there are correlated predictors that trees will be correlated and this allows for more independence so that variation will be reduced. 
 
-Parallel Computing!
-{r message=FALSE, warning=FALSE}
+We will use parallel computing to speed this process up!
+```{r}
+
 # Assign the task
-library(doParallel)
+
 cl<-makePSOCKcluster(12)
   
 registerDoParallel(cl)
@@ -358,6 +361,12 @@ unregister_dopar <- function() {
   rm(list=ls(name=env), pos=env)
 }
 unregister_dopar()
+```
+
+Boosted Tree Method:
+The Boosted Tree Method is like the Random Forest Method, in that it continues to break the model into family trees based on the most impactful predictors, however the mechanisms to do so differ.
+The BTM uses iterations with each ‘generation’ and will recalibrate the model at each level.  This results in new tree being updated by the previous tree.  We begin our Boost with an initialized prediction of zero and create a tree model using the residuals acting as the response.  It will then reconstruct the model, for a new fit and repeat this process for the number of times you select.  
+The BTM typically is the best method, since it is a more deliberate and slow fitting process that updates as it goes.
 
 ```{r message=FALSE, warning=FALSE}
 

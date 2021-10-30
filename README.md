@@ -9,6 +9,7 @@ library("tidyverse")
 library("GGally")  
 library("caret")  
 library("gbm"")
+library("parallel")
 
 ## Analyses
 The analysis for Business ariticles is available [here](1.html)  
