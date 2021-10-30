@@ -399,7 +399,8 @@ model_rmse <- c(r0[[1]],r1[[1]],r2[[1]],r3[[1]],r4[[1]], boostedRMSE[[1]])
 compare_models <- data.frame(model_types, model_rmse)
 
 compare_models <- compare_models %>% arrange((model_rmse))
-best_model <- compare_models[1,]
+best_model <- compare_models$model_types[1,]
+best_model_rmse <- compare_models$model_rmse[1,]
 
 ```
-The best model for `r page_name` shares is `r best_model` since it has the lowest rmse.
+The best model for `r page_name` shares is `r best_model` since it has the lowest rmse at `r best_model_rmse`.
