@@ -123,7 +123,8 @@ This graph displays the number of images and videos against the number of shares
 
 ```{r}
 ggplot(data=channel, aes(x=multimedia_category, y=shares)) +
-  geom_col()
+  geom_col() +
+  labs(x="Multimedia items", y = "Number of shares", title = "Media vs Shares")
 
 ```
 This graph displays the number of videos and images in a shared article. A high bar indicates the category that was most prevalent. 
@@ -202,7 +203,8 @@ This code below compares the average number of shares based on positive and nega
 channel <- channel %>% mutate(av_avg_neg_polarity = -1*avg_negative_polarity)
 ggplot(data=channel, aes(x=av_avg_neg_polarity, y=avg_positive_polarity)) +
   geom_point() +
-  stat_function(fun=function(x) x, size = 2, lty = 3 ,color = 'red')
+  stat_function(fun=function(x) x, size = 2, lty = 3 ,color = 'red') +
+  labs(x= "Mean negative polarity", y= "Mean positive polarity", title = "Negative Polarity vs Positive Polarity")
 
 ```
 This graph shows the relationship between the positive and negative polarity of an article. Values above the line y=x would indicate more positive and values below the line y=x indicate more negativity.
@@ -221,7 +223,8 @@ summary(news$shares)
 channel2 <- channel %>% subset(shares >= 2800) 
 
 ggplot(data = channel2, aes(x=sentiment, y=shares)) +
-  geom_col()
+  geom_col() +
+  labs(x="sentiment", y="Number of shares", title = "Sentiment vs Shares")
 ```
 This graph took the 25% of articles with the most shares and display the shares based on their positivity or negativity. The higher bar will indicate what the most shared articles can be categorized as that sentiment.
 
@@ -236,7 +239,8 @@ head(channel$title_subjectivity)
 # Looks like the data is a ranking 0 to 1, and is continuous.  Scatterplot time! :)
 
 g2 <- ggplot(channel, aes(x = title_subjectivity, y = shares))
-g2 + geom_point() 
+g2 + geom_point() +
+  labs(x="Title subjectivity", y  = "Number of shares", title = "Title subjectivity vs Shares")
 
 ```
 
@@ -248,7 +252,7 @@ channel <- channel %>% mutate(subjectivity = if_else(title_subjectivity <=.3, "N
 #### ISSUE  ggplot(data=business2, aes(x=subjectivity, y=shares)) +   geom_col()
 
 ```
-If a title had a subjectivity rating below 0.3 it was classified as Not subjective, between 0.3 and 0.7 as somewhat subjective, and over 0.7 very subjective. THe highest bar in any column would indicate that the most shared articles have a subjectivity of that bars rating.  A high bar in the very subjective column would indicate that the title subjectivity was hard to classify and may contribute to a higher missclassification rate.
+If a title had a subjectivity rating below 0.3 it was classified as Not subjective, between 0.3 and 0.7 as somewhat subjective, and over 0.7 very subjective. The highest bar in any column would indicate that the most shared articles have a subjectivity of that bars rating.  A high bar in the very subjective column would indicate that the title subjectivity was hard to classify and may contribute to a higher missclassification rate.
 
 
 
@@ -399,8 +403,8 @@ model_rmse <- c(r0[[1]],r1[[1]],r2[[1]],r3[[1]],r4[[1]], boostedRMSE[[1]])
 compare_models <- data.frame(model_types, model_rmse)
 
 compare_models <- compare_models %>% arrange((model_rmse))
-best_model <- compare_models$model_types[1,]
-best_model_rmse <- compare_models$model_rmse[1,]
+best_model <- compare_models[1,1]
+best_model_rmse <- compare_models[1,2]
 
 ```
 The best model for `r page_name` shares is `r best_model` since it has the lowest rmse at `r best_model_rmse`.
