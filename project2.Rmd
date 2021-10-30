@@ -11,15 +11,17 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+#Introduction
 
+We are using the shares of news stories datafile from the UCI Machine learning database. We are focusing on variables that describe the length of articles, sentiment of articles, subjectivity of articles, day of publishing, and content of the articles. Our goal is to create a model that can predict the number of shares based on either all of a subset of these variables. We will use linear, random forest, and boosted tree models. 
 
 Libraries
 ```{r message=FALSE, warning=FALSE}
 library("tidyverse")
 library("GGally")
 library("caret")
-library("gbm")  
-library("parallel")
+library("gbm")
+library("doParallel")
 set.seed(1234)
 ```
 ```{r}
@@ -275,7 +277,7 @@ channelTest <- channel[-trainIndex, ]
 
 
 ```
-Linear Models
+#Linear Models
 
 A linear model seeks to minimize the sum of the squared distances between the observed values and the predicted values. In this scenario the number of shares are the observed values. The predicted number of shares will be determined by the variables that are used in each model. Predicted values are found by inputting a value for each model variable and then applying the model coefficients to those inputs and summing the results. The coefficients associated with each model variable are the ones that minimized the squared distance between that prediction and the observed value. Adding more variables increases the complexity of the model but may also increase the predictive ability. Using terms that are transformations of the original variables (such as squaring) can add more flexibility to the model allowing for increased prediction ability. We can evaluate a model by examining measures such as the mean squared error which averages the distances between the predictions and observed values (we want this number to be small), the R-squared value which tells us how much of the variation is explained by the model variables (we want this number to be near 1), or residual plots which illuminate potentiall outlier values or influential points.
 
@@ -337,7 +339,7 @@ r3 <- postResample(pred3, obs = log_shares)
 Random forest modelling uses the idea of bootstrapping. This method will take bootstrap samples form the data, train the tree using that sample, repeat a set number of times and return a final prediction that is the mean of the predictions found in this process. Random forest is different from bagging in that it uses a random subset of the predictors for each bootstrap. This is potentially more useful as if there are correlated predictors that trees will be correlated and this allows for more independence so that variation will be reduced. 
 
 We will use parallel computing to speed this process up!
-```{r}
+```{r message=FALSE, warning=FALSE}
 
 # Assign the task
 
@@ -364,7 +366,7 @@ unregister_dopar <- function() {
 unregister_dopar()
 ```
 
-Boosted Tree Method:
+#Boosted Tree Method:
 The Boosted Tree Method is like the Random Forest Method, in that it continues to break the model into family trees based on the most impactful predictors, however the mechanisms to do so differ.
 The BTM uses iterations with each ‘generation’ and will recalibrate the model at each level.  This results in new tree being updated by the previous tree.  We begin our Boost with an initialized prediction of zero and create a tree model using the residuals acting as the response.  It will then reconstruct the model, for a new fit and repeat this process for the number of times you select.  
 The BTM typically is the best method, since it is a more deliberate and slow fitting process that updates as it goes.
@@ -389,7 +391,7 @@ boostedRMSE
 
 ```
 
-Compare Models
+#Compare Models
 ```{r}
 
 model_types <- c("LM0: All variables from EDA", "LM1: Multimedia", "LM2: Release day", "LM3: Length", "Random Forest","Boost Tree")
