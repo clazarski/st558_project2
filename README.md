@@ -8,7 +8,7 @@ We explored the UCI machine learning database file on shares of news stories to 
 library("tidyverse")  
 library("GGally")  
 library("caret")  
-library("gbm"")
+library("gbm"")  
 library("parallel")
 
 ## Analyses

@@ -18,7 +18,8 @@ Libraries
 library("tidyverse")
 library("GGally")
 library("caret")
-library("gbm")
+library("gbm")  
+library("parallel")
 set.seed(1234)
 ```
 ```{r}
