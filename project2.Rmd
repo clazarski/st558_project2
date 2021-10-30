@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #Introduction
 
-We are using the shares of news stories datafile from the UCI Machine learning database. We are focusing on variables that describe the length of articles, sentiment of articles, subjectivity of articles, day of publishing, and content of the articles. Our goal is to create a model that can predict the number of shares based on either all of a subset of these variables. We will use linear, random forest, and boosted tree models. 
+We are using the shares of news stories datafile from the UCI Machine learning database. We are focusing on variables that describe the length of articles, sentiment of articles, subjectivity of articles, day of publishing, and content of the articles. Our goal is to create a model that can predict the number of shares based on either all variables or a subset of these variables. We will use linear, random forest, and boosted tree models. 
 
 Libraries
 ```{r message=FALSE, warning=FALSE}
@@ -32,7 +32,7 @@ if_else(params$data == 4, "social media",
 if_else(params$data == 5, "technology", "world")))))
 ```
 
-Analysis of `r page_name` shares.
+#Analysis of `r page_name` shares.
 
 Read in and subset the data
 ```{r message=FALSE}
@@ -62,17 +62,19 @@ other <- news %>% filter((data_channel_is_lifestyle + data_channel_is_entertainm
 
 # This accounts for all of the data. Life is good.
 ```
-  
-  Now that we had an excellent partitioning of the data.  By going to the website and reading the descriptions of the variables, we became interested to see if there was a time influence on the number of shares.  If an article was published on a week day versus a weekend, would it get more shares?  We thought so, with an intuition that people read more articles at work, and thus would be more likely to share articles that publish during the work week.  Let's see if we were on to something, shall we...  
-   
+
 Set the Channel according to the parameter
 ```{r}
 channel <-  news2 %>% filter(type == params$data)
 ```
+  
+  Now we have an excellent partitioning of the data.  By going to the website and reading the descriptions of the variables, we became interested to see if there was a time influence on the number of shares.  If an article was published on a weekday versus a weekend, would it get more shares?  We thought so, with an intuition that people read more articles at work, and thus would be more likely to share articles that publish during the work week.  Let's see if we were on to something, shall we...  
+   
+
 
 # Day of the week
 
-We created a variable that indicated the day of the week an article was shared so we could summarize the number of shares by day.    
+We created a variable that indicated the day of the week an article was published so we could summarize the number of shares by day.    
 ```{r message=FALSE, warning=FALSE}
 
 channel <- channel %>% mutate(day = 
@@ -92,17 +94,18 @@ channel <- channel %>% mutate(workweek =
                       weekday_is_wednesday == 1 |  weekday_is_thursday == 1, 'yes', 'no'))
 
 ggplot(data=channel, aes(x=day, y=shares)) +
-  geom_col()
+  geom_col() +
+  labs(x="Day of the week", y="Number of shares", title = "Day vs Shares")
 
 
 ```    
-This graph indicates which day has the most shares. A higher bar indicates more shares on that day.
+This graph indicates which day has the most shares. A higher bar indicates more shares of an article that was published that day.
 
 ```{r}
 channel %>% group_by(day) %>% summarise(Total = sum(shares), mean = mean(shares), sd = sd(shares))
 ```
 
-The summary statistics indicate the total number of shares per day along with the average and stanard deviation. Days with the highest mean indicate more shares. A large standard deviation indicates high variability in the number of shares on that day.
+The summary statistics indicate the total number of shares from an article published that day along with the average and standard deviation. Days with the highest mean indicate more shares. A large standard deviation indicates high variability in the number of shares from an article published on that day.
 
 #Multi media
 
@@ -127,7 +130,7 @@ ggplot(data=channel, aes(x=multimedia_category, y=shares)) +
   labs(x="Multimedia items", y = "Number of shares", title = "Media vs Shares")
 
 ```
-This graph displays the number of videos and images in a shared article. A high bar indicates the category that was most prevalent. 
+This graph displays the number of shares based on the number of multi-media items in an article. A high bar indicates the category that was most prevalent. 
 
 #Length of article
 
@@ -157,11 +160,11 @@ channel %>% group_by(wordiness) %>% summarise(Total = sum(shares), mean = mean(s
 
 
 ```
-The summary statistics show the total number of shares based on article length.  It also reports the average and the standard deviation.  If the standard deviation is high, then it says there's much more variation in the number of shares. 
+The summary statistics show the total number of shares based on article length.  It also reports the average and the standard deviation.  If the standard deviation is high, then it says there is much more variation in the number of shares. 
 
-
+#Length of Title
 How long is the title?
-Is the title one word or a phrase?  Does length perhaps grab the readers attention to read it and then to pass it on...let's look and see.
+Is the title one word or a phrase?  Does length perhaps grab the reader's attention to read it and then to pass it on...let's look and see.
 
 ```{r}
 # First, what is the distribution of title length?
@@ -194,7 +197,9 @@ Would a long article have a long title?  Is there a relationship between article
 table(channel$wordiness, channel$title_words)
 
 ```
+The columns are title length, the rows are article length, each cell displays the count of articles in those categories. 
 
+#Sentiment
 Is it a positive article, or negative?
 
 This code below compares the average number of shares based on positive and negative polarity of an article. If it is more positive than negative it is classified as positive, if not, negative. The summary statistics indicate the mean number of shares for articles classified as negative or positive and the standard deviation. A higher mean value would indicate more shares.
@@ -228,7 +233,7 @@ ggplot(data = channel2, aes(x=sentiment, y=shares)) +
 ```
 This graph took the 25% of articles with the most shares and display the shares based on their positivity or negativity. The higher bar will indicate what the most shared articles can be categorized as that sentiment.
 
-
+#Subjectivity
 Is the title subjective?  Do shares lean towards opinion over objectiveness?  We would venture yes!
 
 ```{r}
@@ -260,11 +265,11 @@ If a title had a subjectivity rating below 0.3 it was classified as Not subjecti
 
 "After I pee my rsqured is much lower." (Kristi Ramey 10/22/2021 4:37 PM)
 
-Just checking if you're actually reading this :) (‘we completely understand if you’re just skimming – we would.
+Just checking if you're actually reading this :) (we completely understand if you’re just skimming – we would.)
 
-Moving on
+Moving on...
 
-
+#Data analysis prep
 Splitting data into a training and test set (70/30):
 ```{r message=FALSE, warning=FALSE}
 
@@ -283,7 +288,7 @@ channelTest <- channel[-trainIndex, ]
 ```
 #Linear Models
 
-A linear model seeks to minimize the sum of the squared distances between the observed values and the predicted values. In this scenario the number of shares are the observed values. The predicted number of shares will be determined by the variables that are used in each model. Predicted values are found by inputting a value for each model variable and then applying the model coefficients to those inputs and summing the results. The coefficients associated with each model variable are the ones that minimized the squared distance between that prediction and the observed value. Adding more variables increases the complexity of the model but may also increase the predictive ability. Using terms that are transformations of the original variables (such as squaring) can add more flexibility to the model allowing for increased prediction ability. We can evaluate a model by examining measures such as the mean squared error which averages the distances between the predictions and observed values (we want this number to be small), the R-squared value which tells us how much of the variation is explained by the model variables (we want this number to be near 1), or residual plots which illuminate potentiall outlier values or influential points.
+A linear model seeks to minimize the sum of the squared distances between the observed values and the predicted values. In this scenario the number of shares are the observed values. The predicted number of shares will be determined by the variables that are used in each model. Predicted values are found by inputting a value for each model variable and then applying the model coefficients to those inputs and summing the results. The coefficients associated with each model variable are the ones that minimized the squared distance between that prediction and the observed value. Adding more variables increases the complexity of the model but may also increase the predictive ability of the model. Using terms that are transformations of the original variables (such as squaring) can add more flexibility to the model allowing for increased predictive ability. We can evaluate a model by examining measures such as the mean squared error which averages the distances between the predictions and observed values (we want this number to be small), the R-squared value which tells us how much of the variation is explained by the model variables (we want this number to be near 1), or residual plots which illuminate potential outlier values or influential points.
 
 ```{R}
 # Linear model using all of the variables in our EDA
@@ -340,7 +345,7 @@ r3 <- postResample(pred3, obs = log_shares)
 ```
 
 #Random Forest Model
-Random forest modelling uses the idea of bootstrapping. This method will take bootstrap samples form the data, train the tree using that sample, repeat a set number of times and return a final prediction that is the mean of the predictions found in this process. Random forest is different from bagging in that it uses a random subset of the predictors for each bootstrap. This is potentially more useful as if there are correlated predictors that trees will be correlated and this allows for more independence so that variation will be reduced. 
+Random forest modelling uses the idea of bootstrapping. This method will take bootstrap samples form the data, train the tree using that sample, repeat a set number of times and return a final prediction that is the mean of the predictions found in this process. Random forest is different from bagging in that it uses a random subset of the predictors for each bootstrap. This is potentially more useful if there are correlated predictors. Correlated predictors lead to trees that will be correlated and random forest allows for more independence so that variation will be reduced. 
 
 We will use parallel computing to speed this process up!
 ```{r message=FALSE, warning=FALSE}
@@ -372,8 +377,8 @@ unregister_dopar()
 
 #Boosted Tree Method:
 The Boosted Tree Method is like the Random Forest Method, in that it continues to break the model into family trees based on the most impactful predictors, however the mechanisms to do so differ.
-The BTM uses iterations with each ‘generation’ and will recalibrate the model at each level.  This results in new tree being updated by the previous tree.  We begin our Boost with an initialized prediction of zero and create a tree model using the residuals acting as the response.  It will then reconstruct the model, for a new fit and repeat this process for the number of times you select.  
-The BTM typically is the best method, since it is a more deliberate and slow fitting process that updates as it goes.
+The BTM uses iterations with each ‘generation’ and will recalibrate the model at each level.  This results in the new tree being updated by the previous tree.  We begin our Boost with an initialized prediction of zero and create a tree model using the residuals as the response.  It will then reconstruct the model, for a new fit and repeat this process for the number of times we selected.  
+The BTM typically is the best method, since it is a more deliberate and a slow fitting process that updates as it goes.
 
 ```{r message=FALSE, warning=FALSE}
 
@@ -407,4 +412,4 @@ best_model <- compare_models[1,1]
 best_model_rmse <- compare_models[1,2]
 
 ```
-The best model for `r page_name` shares is `r best_model` since it has the lowest rmse at `r best_model_rmse`.
+The best model for `r page_name` shares is `r best_model` since it has the lowest RMSE at `r best_model_rmse`.
