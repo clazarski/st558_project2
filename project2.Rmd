@@ -343,6 +343,22 @@ r3 <- postResample(pred3, obs = log_shares)
 
 
 ```
+Choose the best linear model
+
+```{r}
+linear_models <- c("Model 1", "Model 2", "Model 3", "Model 4")
+linear_rmse <- c(r0[[1]],r1[[1]],r2[[1]],r3[[1]])
+linear_r_squared <- c(LM0$results$Rsquared, LM1$results$Rsquared, LM2$results$Rsquared,LM3$results$Rsquared)
+compare_linear_models <- data.frame(linear_models,linear_rmse, linear_r_squared)
+
+compare_linear_models <- compare_linear_models %>% arrange(linear_r_squared)
+best_linear_model <- compare_linear_models[4,]
+best_linear_model
+```
+The best linear model is `r best_linear_model[[1]]` with an adjusted r squared value of `r best_linear_model[[3]]`.
+
+
+
 
 #Random Forest Model
 Random forest modelling uses the idea of bootstrapping. This method will take bootstrap samples form the data, train the tree using that sample, repeat a set number of times and return a final prediction that is the mean of the predictions found in this process. Random forest is different from bagging in that it uses a random subset of the predictors for each bootstrap. This is potentially more useful if there are correlated predictors. Correlated predictors lead to trees that will be correlated and random forest allows for more independence so that variation will be reduced. 
@@ -403,8 +419,8 @@ boostedRMSE
 #Compare Models
 ```{r}
 
-model_types <- c("LM0: All variables from EDA", "LM1: Multimedia", "LM2: Release day", "LM3: Length", "Random Forest","Boost Tree")
-model_rmse <- c(r0[[1]],r1[[1]],r2[[1]],r3[[1]],r4[[1]], boostedRMSE[[1]])
+model_types <- c("Linear Model", "Random Forest","Boosted Tree")
+model_rmse <- c(best_linear_model[[2]], r4[[1]], boostedRMSE[[1]])
 compare_models <- data.frame(model_types, model_rmse)
 
 compare_models <- compare_models %>% arrange((model_rmse))
